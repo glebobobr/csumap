@@ -1,0 +1,141 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "id": "NYGPqcxk7BDrkVLffxSfjUUGdlSzrZyv",
+      "type": "Feature",
+      "properties": {
+        "name": "общежитие_2",
+        "type": "dormitory",
+        "color": "#E8A87C",
+        "height": 14,
+        "levels": 4,
+        "basement": 0,
+        "max_level": 4,
+        "min_level": 1,
+        "base_height": 0,
+        "description": "",
+        "floor_height": 3.5
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              61.319292666,
+              55.176253155
+            ],
+            [
+              61.319805628,
+              55.176227528
+            ],
+            [
+              61.319830792,
+              55.176391776
+            ],
+            [
+              61.319317831,
+              55.176417404
+            ],
+            [
+              61.319292666,
+              55.176253155
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "id": "aOO1p6na2MldnPQ1Popdod8byvXXxAk7",
+      "type": "Feature",
+      "properties": {
+        "name": "хозяйственное",
+        "type": "utility",
+        "color": "#AAAAAA",
+        "height": 3.5,
+        "levels": 1,
+        "basement": 0,
+        "max_level": 1,
+        "min_level": 1,
+        "base_height": 0,
+        "description": "Здесь, на вас не будут наезжать охранники, то что вы курите в не положенном месте. Кури на здоровье <3",
+        "floor_height": 3.5
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              61.317600637,
+              55.17691476
+            ],
+            [
+              61.31769447,
+              55.176915421
+            ],
+            [
+              61.317692733,
+              55.176876391
+            ],
+            [
+              61.317600637,
+              55.176876391
+            ],
+            [
+              61.317600637,
+              55.17691476
+            ],
+            [
+              61.317600637,
+              55.17691476
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    },
+    {
+      "id": "cH7bW9yJE3jALkTlkuAvp6af2CRDxR3z",
+      "type": "Feature",
+      "properties": {
+        "name": "общежитие_1",
+        "type": "dormitory",
+        "color": "#E8A87C",
+        "height": 14,
+        "levels": 4,
+        "basement": 0,
+        "max_level": 4,
+        "min_level": 1,
+        "base_height": 0,
+        "description": "",
+        "floor_height": 3.5
+      },
+      "geometry": {
+        "coordinates": [
+          [
+            [
+              61.320033591,
+              55.176234936
+            ],
+            [
+              61.320548511,
+              55.176234936
+            ],
+            [
+              61.320548511,
+              55.176399812
+            ],
+            [
+              61.320033591,
+              55.176399812
+            ],
+            [
+              61.320033591,
+              55.176234936
+            ]
+          ]
+        ],
+        "type": "Polygon"
+      }
+    }
+  ]
+}

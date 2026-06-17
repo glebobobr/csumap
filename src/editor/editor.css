@@ -1,0 +1,896 @@
+/* ═══ Сброс и базовые стили ═══ */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --toolbar-w: 72px;
+    --panel-w: 280px;
+    --header-h: 48px;
+    --bg: #1e1e1e;
+    --surface: #2a2a2a;
+    --surface-2: #333;
+    --border: #444;
+    --text: #e0e0e0;
+    --text-muted: #888;
+    --accent: #5B8DB8;
+    --danger: #e74c3c;
+}
+
+body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+    font-size: 13px;
+}
+
+/* ═══ Шапка ═══ */
+
+#editor-header {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    height: var(--header-h);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    z-index: 100;
+    gap: 12px;
+}
+
+.header-left,
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.header-center {
+    flex: 1;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+.header-title {
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* ═══ Тулбар (левая панель) ═══ */
+
+#toolbar {
+    position: fixed;
+    top: var(--header-h);
+    left: 0;
+    width: var(--toolbar-w);
+    height: calc(100vh - var(--header-h));
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 12px 0;
+    gap: 4px;
+    z-index: 50;
+}
+
+.tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+    padding: 0 8px;
+    position: relative;
+}
+
+/* Выпадающее меню фигур */
+.shape-dropdown {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.shape-menu-btn {
+    width: 56px;
+    height: 20px;
+    border: none;
+    background: var(--surface-2);
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 10px;
+    margin-top: 2px;
+    transition: all 0.2s;
+}
+
+.shape-menu-btn:hover {
+    background: var(--border);
+    color: var(--text);
+}
+
+.shape-menu {
+    position: absolute;
+    left: 100%;
+    top: 0;
+    margin-left: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 140px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.shape-menu.hidden {
+    display: none;
+}
+
+.shape-menu button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: background 0.2s;
+    text-align: left;
+}
+
+.shape-menu button:hover {
+    background: var(--surface-2);
+}
+
+.shape-menu button svg {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.shape-menu button span {
+    flex: 1;
+}
+
+.tool-divider {
+    width: 48px;
+    height: 1px;
+    background: var(--border);
+    margin: 6px 0;
+}
+
+.tool-btn {
+    width: 56px;
+    height: 56px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    transition: 0.15s;
+    position: relative;
+}
+
+.tool-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+    stroke: none;
+}
+
+.tool-btn svg line {
+    stroke: currentColor;
+    fill: none;
+}
+
+.tool-btn span {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.tool-btn:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.tool-btn.active {
+    background: var(--accent);
+    color: #fff;
+}
+
+.tool-btn.danger:hover,
+.tool-btn.danger.active {
+    background: var(--danger);
+    color: #fff;
+}
+
+/* ═══ Карта ═══ */
+
+#editor-map {
+    position: fixed;
+    top: var(--header-h);
+    left: var(--toolbar-w);
+    right: 0;
+    bottom: 0;
+}
+
+/* ═══ Панель свойств ═══ */
+
+#properties-panel {
+    position: fixed;
+    top: var(--header-h);
+    right: 0;
+    width: var(--panel-w);
+    height: calc(100vh - var(--header-h));
+    background: var(--surface);
+    border-left: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 0;
+    z-index: 50;
+    transition: transform 0.2s ease;
+}
+
+#properties-panel.panel-hidden {
+    transform: translateX(100%);
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 14px;
+    position: sticky;
+    top: 0;
+    background: var(--surface);
+    z-index: 1;
+}
+
+#panel-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+#panel-close:hover {
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.prop-section {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.prop-label {
+    display: block;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.prop-input,
+.prop-select,
+.prop-textarea {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    transition: 0.15s;
+}
+
+.prop-input:focus,
+.prop-select:focus,
+.prop-textarea:focus {
+    border-color: var(--accent);
+}
+
+.prop-textarea {
+    resize: vertical;
+    min-height: 70px;
+}
+
+.prop-select option { background: var(--surface-2); }
+
+.geometry-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    font-size: 12px;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+/* ═══ Этажность ═══ */
+
+.levels-control {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.level-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.level-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex: 1;
+}
+
+.level-value {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent);
+}
+
+.level-row.computed {
+    background: var(--surface-2);
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin: 4px -4px;
+}
+
+.number-control {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.num-btn {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.1s;
+}
+
+.num-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.num-input {
+    width: 52px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    text-align: center;
+    padding: 4px;
+    font-size: 13px;
+    outline: none;
+}
+
+.num-input::-webkit-inner-spin-button { opacity: 0; }
+
+/* ═══ Комплекс ═══ */
+
+.complex-row {
+    display: flex;
+    gap: 6px;
+}
+
+.complex-row .prop-input {
+    flex: 1;
+}
+
+#btn-new-complex {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.complex-hint {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
+/* ═══ Цвет ═══ */
+
+.color-picker-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.color-preview {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    border: 2px solid var(--border);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* ═══ Кнопки ═══ */
+
+.prop-actions {
+    padding: 16px;
+    display: flex;
+    gap: 8px;
+}
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 8px 14px;
+    border: none;
+    transition: 0.15s;
+}
+
+.btn-primary {
+    background: var(--accent);
+    color: #fff;
+    font-weight: 600;
+    flex: 1;
+}
+
+.btn-primary:hover { background: #4a7ca8; }
+
+.btn-secondary {
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid var(--danger);
+}
+
+.btn-danger:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+#btn-back {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+#btn-back:hover { color: var(--text); }
+
+/* ═══ Палитра ═══ */
+
+#color-palette {
+    position: fixed;
+    top: calc(var(--header-h) + 8px);
+    right: calc(var(--panel-w) + 8px);
+    width: 260px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0;
+    z-index: 200;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    transition: opacity 0.15s, transform 0.15s;
+}
+
+#color-palette.palette-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.95) translateY(-8px);
+}
+
+.palette-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+}
+
+#palette-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.palette-section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 10px 14px 4px;
+}
+
+.palette-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 4px 14px 10px;
+}
+
+.palette-swatch {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: 0.1s;
+    position: relative;
+}
+
+.palette-swatch:hover {
+    transform: scale(1.15);
+    border-color: rgba(255,255,255,0.5);
+}
+
+.palette-swatch.active {
+    border-color: #fff;
+}
+
+.palette-swatch[title]::after {
+    content: attr(title);
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #111;
+    color: #fff;
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 3px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: 0.15s;
+    z-index: 10;
+}
+
+.palette-swatch:hover::after { opacity: 1; }
+
+/* Пользовательский цвет — можно удалить */
+.palette-swatch.custom {
+    position: relative;
+}
+
+.palette-swatch.custom .swatch-del {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 14px;
+    height: 14px;
+    background: var(--danger);
+    border-radius: 50%;
+    font-size: 9px;
+    color: #fff;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    border: 1px solid var(--surface);
+}
+
+.palette-swatch.custom:hover .swatch-del {
+    display: flex;
+}
+
+.palette-add-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 14px 14px;
+    border-top: 1px solid var(--border);
+}
+
+.palette-add-row input[type="color"] {
+    width: 32px;
+    height: 32px;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    border-radius: 6px;
+    background: none;
+    flex-shrink: 0;
+}
+
+.palette-add-row .prop-input {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 12px;
+}
+
+/* ═══ Стиль Draw ═══ */
+
+.mapboxgl-ctrl-group {
+    display: none !important;  /* Скрываем стандартные контролы Draw */
+}
+
+/* ═══ Панель трансформаций ═══ */
+
+.transform-panel {
+    position: fixed;
+    bottom: 16px;
+    left: calc(var(--toolbar-w) + 12px);
+    width: 320px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    z-index: 50;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    overflow: hidden;
+}
+
+.transform-panel.hidden {
+    display: none;
+}
+
+.transform-title {
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 13px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-2);
+}
+
+.transform-section {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+}
+
+.transform-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.transform-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.tr-axis-label {
+    font-size: 12px;
+    color: var(--text-muted);
+    width: 70px;
+    flex-shrink: 0;
+}
+
+.tr-btn {
+    width: 32px;
+    height: 32px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: 0.1s;
+}
+
+.tr-btn:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+}
+
+.tr-input {
+    flex: 1;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 6px 8px;
+    font-size: 13px;
+    text-align: center;
+    outline: none;
+    min-width: 0;
+}
+
+.tr-input:focus { border-color: var(--accent); }
+.tr-input::-webkit-inner-spin-button { opacity: 0; }
+
+.tr-unit {
+    font-size: 12px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.tr-checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    cursor: pointer;
+}
+
+.tr-preset-row {
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.tr-preset {
+    padding: 4px 8px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--text);
+    font-size: 11px;
+    cursor: pointer;
+    transition: 0.1s;
+}
+
+.tr-preset:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.tr-apply-btn {
+    width: 100%;
+    padding: 7px;
+    background: var(--accent);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.tr-apply-btn:hover { background: #4a7ca8; }
+
+.tr-reset-btn {
+    width: 100%;
+    padding: 9px;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.1s;
+}
+
+.tr-reset-btn:hover { color: var(--danger); }
+
+/* ═══ Модалка для фигур ═══ */
+
+#shape-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 200;
+}
+
+#shape-modal.hidden { display: none; }
+
+.shape-modal-content {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 20px;
+    width: 300px;
+    border: 1px solid var(--border);
+}
+
+.shape-modal-title {
+    font-weight: 600;
+    font-size: 16px;
+    margin-bottom: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.shape-modal-close {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.shape-params { display: flex; flex-direction: column; gap: 12px; }
+
+.shape-param label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--text-muted);
+}
+
+.shape-param input[type="range"] {
+    width: 100%;
+    margin-top: 4px;
+    accent-color: var(--accent);
+}
+
+.shape-param-value {
+    font-weight: 600;
+    color: var(--accent);
+    min-width: 48px;
+    text-align: right;
+}
+
+.shape-modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+}
+
+/* Метка группы инструментов */
+.tool-group-label {
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 2px;
+    text-align: center;
+}

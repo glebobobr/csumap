@@ -1,0 +1,27 @@
+{
+  "name": "campus-map",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "generate-api": "orval --config orval.config.ts",
+    "generate-types": "openapi-typescript api/openapi.yaml --output frontend/src/api/schema.d.ts"
+  },
+  "dependencies": {
+    "@mapbox/mapbox-gl-draw": "^1.5.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "maplibre-gl": "^4.7.0",
+    "pg": "^8.13.1",
+    "polygon-clipping": "^0.15.7"
+  },
+  "devDependencies": {
+    "vite": "^6.0.0",
+    "orval": "^7.0.0",
+    "openapi-typescript": "^7.0.0"
+  }
+}

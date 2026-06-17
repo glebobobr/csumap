@@ -1,0 +1,251 @@
+# api/openapi.yaml
+openapi: "3.1.0"
+info:
+  title: "GeoMap API"
+  version: "1.0.0"
+  description: "MapLibre + Pannellum + Photos backend"
+
+servers:
+  - url: "/api/v1"           # ← относительный путь, работает везде
+    description: "Local & Production"
+
+tags:
+  - name: tiles
+  - name: photos
+  - name: panoramas
+  - name: mascot
+
+paths:
+
+  # ── TILES ──────────────────────────────────────────────
+  /tiles/{layer}/{z}/{x}/{y}.mvt:
+    get:
+      operationId: GetMVTTile
+      tags: [tiles]
+      summary: "Vector tile (Mapbox Vector Tile)"
+      parameters:
+        - {name: layer, in: path, required: true, schema: {type: string}}
+        - {name: z,     in: path, required: true, schema: {type: integer}}
+        - {name: x,     in: path, required: true, schema: {type: integer}}
+        - {name: y,     in: path, required: true, schema: {type: integer}}
+      responses:
+        "200":
+          description: "MVT binary tile"
+          content:
+            application/x-protobuf:
+              schema: {type: string, format: binary}
+        "204":
+          description: "Empty tile"
+
+  /tilejson/{layer}:
+    get:
+      operationId: GetTileJSON
+      tags: [tiles]
+      parameters:
+        - {name: layer, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: "TileJSON metadata"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/TileJSON"}
+
+  # ── PHOTOS ─────────────────────────────────────────────
+  /photos:
+    get:
+      operationId: ListPhotos
+      tags: [photos]
+      parameters:
+        - name: bbox
+          in: query
+          description: "minLon,minLat,maxLon,maxLat"
+          schema: {type: string, example: "37.5,55.6,37.7,55.8"}
+        - name: limit
+          in: query
+          schema: {type: integer, default: 50}
+      responses:
+        "200":
+          description: "Photo collection"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PhotoCollection"}
+
+  /photos/nearby:
+    get:
+      operationId: GetNearbyPhotos
+      tags: [photos]
+      parameters:
+        - {name: lon,    in: query, required: true,  schema: {type: number}}
+        - {name: lat,    in: query, required: true,  schema: {type: number}}
+        - {name: radius, in: query, required: false, schema: {type: number, default: 500}}
+      responses:
+        "200":
+          description: "Nearby photos collection"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PhotoCollection"}
+
+  /photos/{id}:
+    get:
+      operationId: GetPhoto
+      tags: [photos]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: "Photo details"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Photo"}
+        "404":
+          description: "Photo not found"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/Error"}
+
+  # ── PANORAMAS ──────────────────────────────────────────
+  /panoramas/nearest:
+    get:
+      operationId: GetNearestPanoramas
+      tags: [panoramas]
+      parameters:
+        - {name: lon,    in: query, required: true, schema: {type: number}}
+        - {name: lat,    in: query, required: true, schema: {type: number}}
+        - {name: radius, in: query, schema: {type: number, default: 50}}
+      responses:
+        "200":
+          description: "Nearest panoramas"
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: "#/components/schemas/PanoramaBrief"}
+
+  /panoramas/{id}/config:
+    get:
+      operationId: GetPannellumConfig
+      tags: [panoramas]
+      parameters:
+        - {name: id, in: path, required: true, schema: {type: integer, format: int64}}
+      responses:
+        "200":
+          description: "Pannellum configuration"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/PannellumConfig"}
+
+  # ── MASCOT ─────────────────────────────────────────────
+  /mascot/skins/{name}:
+    get:
+      operationId: GetMascotSkin
+      tags: [mascot]
+      parameters:
+        - {name: name, in: path, required: true, schema: {type: string}}
+      responses:
+        "200":
+          description: "Mascot skin configuration"
+          content:
+            application/json:
+              schema: {$ref: "#/components/schemas/MascotSkin"}
+
+# ── SCHEMAS ──────────────────────────────────────────────
+components:
+  schemas:
+
+    Photo:
+      type: object
+      required: [id, previewUrl, width, height]
+      properties:
+        id:           {type: integer, format: int64}
+        title:        {type: string}
+        originalUrl:  {type: string, format: uri}
+        previewUrl:   {type: string, format: uri}
+        thumbnailUrl: {type: string, format: uri}
+        webpUrl:      {type: string, format: uri}
+        blurhash:     {type: string}
+        width:        {type: integer}
+        height:       {type: integer}
+        capturedAt:   {type: string, format: date-time}
+        location:
+          $ref: "#/components/schemas/GeoJSONPoint"
+        exif:
+          $ref: "#/components/schemas/ExifData"
+
+    PhotoCollection:
+      type: object
+      properties:
+        type:     {type: string, enum: [FeatureCollection]}
+        features:
+          type: array
+          items: {$ref: "#/components/schemas/PhotoFeature"}
+
+    PhotoFeature:
+      type: object
+      properties:
+        type:       {type: string, enum: [Feature]}
+        geometry:   {$ref: "#/components/schemas/GeoJSONPoint"}
+        properties: {$ref: "#/components/schemas/Photo"}
+
+    GeoJSONPoint:
+      type: object
+      properties:
+        type:        {type: string, enum: [Point]}
+        coordinates:
+          type: array
+          items: {type: number}
+          minItems: 2
+          maxItems: 3
+
+    ExifData:
+      type: object
+      properties:
+        make:         {type: string}
+        model:        {type: string}
+        focalLength:  {type: string}
+        aperture:     {type: string}
+        shutterSpeed: {type: string}
+        iso:          {type: integer}
+
+    PanoramaBrief:
+      type: object
+      properties:
+        id:         {type: integer, format: int64}
+        title:      {type: string}
+        previewUrl: {type: string}
+        distanceM:  {type: number}
+        location:   {$ref: "#/components/schemas/GeoJSONPoint"}
+
+    PannellumConfig:
+      type: object
+      description: "Готовый JSON конфиг для pannellum.viewer()"
+      additionalProperties: true
+
+    MascotSkin:
+      type: object
+      properties:
+        name:       {type: string}
+        zdogConfig: {type: object, additionalProperties: true}
+        animations: {type: object, additionalProperties: true}
+
+    TileJSON:
+      type: object
+      properties:
+        tilejson: {type: string}
+        tiles:
+          type: array
+          items: {type: string}
+        minzoom: {type: integer}
+        maxzoom: {type: integer}
+
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code:    {type: integer}
+        message: {type: string}
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

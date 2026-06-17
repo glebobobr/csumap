@@ -1,0 +1,7 @@
+# api/oapi-codegen.yaml — конфиг генератора
+package: api
+generate:
+  chi-server: true     # серверные интерфейсы под chi
+  models: true         # Go структуры из schemas
+  strict-server: true  # строгая типизация хендлеров
+output: internal/api/generated.go

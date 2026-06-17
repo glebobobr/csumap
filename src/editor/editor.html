@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Редактор кампуса</title>
+</head>
+<body>
+
+<!-- ═══ Шапка ═══ -->
+<header id="editor-header">
+    <div class="header-left">
+        <button id="btn-back" title="На карту">← Карта</button>
+        <span class="header-title">Редактор кампуса</span>
+    </div>
+    <div class="header-center">
+        <span id="status-text">Выберите инструмент</span>
+    </div>
+    <div class="header-right">
+        <button id="btn-layer-switch" title="Переключить слой карты">🗺️ Satellite</button>
+        <button id="btn-export" title="Экспорт GeoJSON">⬇ Экспорт</button>
+        <button id="btn-import" title="Импорт GeoJSON">⬆ Импорт</button>
+        <input id="import-input" type="file" accept=".geojson,.json" hidden />
+        <button id="btn-publish" class="btn-secondary" title="Опубликовать все черновики">🚀 Опубликовать</button>
+        <button id="btn-login" title="Войти как редактор">🔐 Войти</button>
+        <button id="btn-save" class="btn-primary">💾 Сохранить</button>
+    </div>
+</header>
+
+<!-- ═══ Тулбар (левая панель) ═══ -->
+<aside id="toolbar">
+    <div class="tool-group">
+        <button class="tool-btn active" data-tool="select" title="Выбор (V)">
+            <svg viewBox="0 0 24 24"><path d="M4 4l7 18 3-7 7-3L4 4z"/></svg>
+            <span>Выбор</span>
+        </button>
+    </div>
+
+    <div class="tool-divider"></div>
+
+    <div class="tool-group">
+        <button class="tool-btn" data-tool="polygon" title="Полигон (P)">
+            <svg viewBox="0 0 24 24"><polygon points="12,3 21,18 3,18"/></svg>
+            <span>Полигон</span>
+        </button>
+        <button class="tool-btn" data-tool="line" title="Линия (L)">
+            <svg viewBox="0 0 24 24"><line x1="4" y1="20" x2="20" y2="4" stroke="currentColor" stroke-width="2"/></svg>
+            <span>Линия</span>
+        </button>
+        <button class="tool-btn" data-tool="point" title="Точка (T)">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5" fill="currentColor"/></svg>
+            <span>Точка</span>
+        </button>
+    </div>
+
+    <div class="tool-divider"></div>
+
+    <div class="tool-group">
+        <button class="tool-btn" data-tool="hand" title="Рука (H)">
+            <svg viewBox="0 0 24 24"><path d="M9 21c-2 0-4-1-5-3L1 11c-.3-.5-.1-1.1.4-1.4.5-.3 1.1-.1 1.4.4L5 13V4c0-.6.4-1 1-1s1 .4 1 1v5h1V3c0-.6.4-1 1-1s1 .4 1 1v6h1V4c0-.6.4-1 1-1s1 .4 1 1v7l2.2-2.8c.4-.5 1-.5 1.4-.2.5.4.5 1 .2 1.4L14 17c-.9 1.3-2.4 2-4 2h-1z"/></svg>
+            <span>Рука</span>
+        </button>
+    </div>
+
+    <div class="tool-divider"></div>
+
+    <div class="tool-group">
+        <button class="tool-btn" id="btn-undo" title="Отмена (Ctrl+Z)">
+            <svg viewBox="0 0 24 24"><path d="M12.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 12.5 8z"/></svg>
+            <span>Отмена</span>
+        </button>
+        <button class="tool-btn" id="btn-redo" title="Возврат (Ctrl+Y)">
+            <svg viewBox="0 0 24 24"><path d="M11.5 8c-2.65 0-5.05 1-6.9 2.6L2 7v9h9l-3.62-3.62c1.39-1.16 3.16-1.88 5.12-1.88 3.54 0 6.55 2.31 7.6 5.5l2.37-.78C21.08 11.03 17.15 8 11.5 8z" transform="scale(-1, 1) translate(-24, 0)"/></svg>
+            <span>Возврат</span>
+        </button>
+    </div>
+</aside>
+
+<!-- ═══ Карта ═══ -->
+<main id="editor-map"></main>
+
+<!-- ═══ Панель свойств (правая) ═══ -->
+<aside id="properties-panel" class="panel-hidden">
+
+    <!-- Заголовок панели -->
+    <div class="panel-header">
+        <span id="panel-title">Свойства</span>
+        <button id="panel-close">✕</button>
+    </div>
+
+    <!-- Тип объекта -->
+    <div class="prop-section">
+        <label class="prop-label">Тип объекта</label>
+        <div class="geometry-badge" id="geometry-type">—</div>
+    </div>
+
+    <!-- Название -->
+    <div class="prop-section">
+        <label class="prop-label">Название</label>
+        <input type="text" id="prop-name" class="prop-input"
+               placeholder="Введите название..." />
+    </div>
+
+    <!-- Категория (для зданий) -->
+    <div class="prop-section" id="section-category">
+        <label class="prop-label">Категория</label>
+        <select id="prop-type" class="prop-select">
+            <option value="">— выбрать —</option>
+            <optgroup label="Здания">
+                <option value="academic">Учебный корпус</option>
+                <option value="dormitory">Общежитие</option>
+                <option value="library">Библиотека</option>
+                <option value="sports">Спорткомплекс</option>
+                <option value="admin">Администрация</option>
+                <option value="canteen">Столовая / Кафе</option>
+                <option value="utility">Хозяйственное</option>
+                <option value="passage">Переход</option>
+            </optgroup>
+            <optgroup label="Зоны">
+                <option value="garden">Сад / Парк</option>
+                <option value="lawn">Газон</option>
+                <option value="parking">Парковка</option>
+                <option value="sports-ground">Спортплощадка</option>
+                <option value="construction">Стройка</option>
+            </optgroup>
+            <optgroup label="Дорожки">
+                <option value="sidewalk">Тротуар</option>
+                <option value="road">Дорога</option>
+                <option value="bike">Велодорожка</option>
+            </optgroup>
+            <optgroup label="POI">
+                <option value="entrance">Вход</option>
+                <option value="cafe">Кафе</option>
+                <option value="bus_stop">Остановка</option>
+                <option value="toilet">Туалет</option>
+                <option value="medical">Медпункт</option>
+                <option value="atm">Банкомат</option>
+            </optgroup>
+        </select>
+    </div>
+
+    <!-- Этажность (только для зданий) -->
+    <div class="prop-section" id="section-levels" style="display:none">
+        <label class="prop-label">Этажи</label>
+        <div class="levels-control">
+            <div class="level-row">
+                <span class="level-label">Кол-во этажей</span>
+                <div class="number-control">
+                    <button class="num-btn" data-target="prop-levels" data-delta="-1">−</button>
+                    <input type="number" id="prop-levels" class="num-input"
+                           min="1" max="50" value="1" />
+                    <button class="num-btn" data-target="prop-levels" data-delta="1">+</button>
+                </div>
+            </div>
+            <div class="level-row">
+                <span class="level-label">Высота этажа (м)</span>
+                <div class="number-control">
+                    <button class="num-btn" data-target="prop-floor-height" data-delta="-0.5">−</button>
+                    <input type="number" id="prop-floor-height" class="num-input"
+                           min="2" max="10" step="0.5" value="3.5" />
+                    <button class="num-btn" data-target="prop-floor-height" data-delta="0.5">+</button>
+                </div>
+            </div>
+            <div class="level-row computed">
+                <span class="level-label">Итого высота</span>
+                <span id="computed-height" class="level-value">3.5 м</span>
+            </div>
+            <div class="level-row">
+                <span class="level-label">Подвальных этажей</span>
+                <div class="number-control">
+                    <button class="num-btn" data-target="prop-basement" data-delta="-1">−</button>
+                    <input type="number" id="prop-basement" class="num-input"
+                           min="0" max="5" value="0" />
+                    <button class="num-btn" data-target="prop-basement" data-delta="1">+</button>
+                </div>
+            </div>
+            <div class="level-divider"></div>
+            <div class="level-row">
+                <span class="level-label">Базовая высота (м)</span>
+                <div class="number-control">
+                    <button class="num-btn" data-target="prop-base-height" data-delta="-1">−</button>
+                    <input type="number" id="prop-base-height" class="num-input"
+                           min="0" max="200" step="0.5" value="0" placeholder="0" />
+                    <button class="num-btn" data-target="prop-base-height" data-delta="1">+</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Комплекс (группировка корпусов) -->
+    <div class="prop-section" id="section-complex" style="display:none">
+      <label class="prop-label">Комплекс</label>
+      <div class="complex-row">
+        <input type="text" id="prop-complex-id" class="prop-input"
+               placeholder="ID комплекса (оставьте пустым для отдельного здания)" />
+        <button id="btn-new-complex" class="btn-secondary" title="Создать новый комплекс">+</button>
+      </div>
+      <div class="complex-hint">Здания с одинаковым ID комплекса отображаются как единая 3D-композиция</div>
+    </div>
+
+    <!-- Цвет -->
+    <div class="prop-section" id="section-color">
+        <label class="prop-label">Цвет</label>
+        <div class="color-picker-row">
+            <div id="selected-color-preview" class="color-preview"></div>
+            <span id="selected-color-hex">#CCCCCC</span>
+            <button id="btn-open-palette" class="btn-secondary">Палитра</button>
+        </div>
+    </div>
+
+    <!-- Описание -->
+    <div class="prop-section">
+        <label class="prop-label">Описание</label>
+        <textarea id="prop-description" class="prop-textarea"
+                  rows="3" placeholder="Необязательно..."></textarea>
+    </div>
+
+    <!-- Кнопки -->
+    <div class="prop-actions">
+        <button id="btn-apply" class="btn-primary">Применить</button>
+        <button id="btn-delete-feature" class="btn-danger">Удалить</button>
+    </div>
+
+</aside>
+
+<!-- ═══ Палитра цветов ═══ -->
+<div id="color-palette" class="palette-hidden">
+    <div class="palette-header">
+        <span>Палитра цветов</span>
+        <button id="palette-close">✕</button>
+    </div>
+
+    <div class="palette-section-title">Архитектура</div>
+    <div class="palette-grid" id="palette-arch"></div>
+
+    <div class="palette-section-title">Зоны и природа</div>
+    <div class="palette-grid" id="palette-zones"></div>
+
+    <div class="palette-section-title">Дорожки</div>
+    <div class="palette-grid" id="palette-paths"></div>
+
+    <div class="palette-section-title">Мои цвета</div>
+    <div class="palette-grid" id="palette-custom"></div>
+    <div class="palette-add-row">
+        <input type="color" id="custom-color-picker" value="#888888" />
+        <input type="text" id="custom-color-name"
+               placeholder="Название цвета" class="prop-input" />
+        <button id="btn-add-color" class="btn-secondary">+ Добавить</button>
+    </div>
+</div>
+
+<script type="module" src="/src/editor/editor.js"></script>
+</body>
+</html>

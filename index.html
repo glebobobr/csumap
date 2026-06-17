@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Карта кампуса</title>
+</head>
+<body>
+  <div id="map"></div>
+
+  <div id="sidebar">
+    <h2>🏛️ Кампус</h2>
+    <p class="hint">Нажмите на здание для подробностей</p>
+
+    <div id="building-info" class="hidden">
+      <h3 id="info-name"></h3>
+      <p id="info-desc"></p>
+      <p id="info-levels"></p>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="btn-2d" class="active">2D</button>
+    <button id="btn-3d">3D</button>
+    <button id="btn-editor" title="Открыть редактор">✏️</button>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

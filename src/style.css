@@ -1,0 +1,117 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+/* ═══ Карта ═══ */
+
+#map {
+  position: absolute;
+  inset: 0;
+}
+
+/* ═══ Сайдбар ═══ */
+
+#sidebar {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  width: 280px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 20px;
+  z-index: 10;
+}
+
+#sidebar h2 {
+  font-size: 18px;
+  margin-bottom: 8px;
+}
+
+#sidebar .hint {
+  font-size: 13px;
+  color: #888;
+}
+
+#building-info {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #eee;
+}
+
+#building-info h3 {
+  font-size: 16px;
+  margin-bottom: 6px;
+}
+
+#building-info p {
+  font-size: 14px;
+  color: #555;
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.hidden {
+  display: none !important;
+}
+
+/* ═══ Кнопки ═══ */
+
+#controls {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 10;
+}
+
+#controls button {
+  width: 42px;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  transition: 0.15s;
+}
+
+#controls button:hover {
+  background: #f0f0f0;
+}
+
+#controls button.active {
+  background: #5B8DB8;
+  color: #fff;
+}
+
+/* ═══ Попап ═══ */
+
+.maplibregl-popup-content {
+  border-radius: 8px !important;
+  padding: 10px 14px !important;
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+}
+
+.popup-title {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.popup-category {
+  font-size: 12px;
+  color: #888;
+}
