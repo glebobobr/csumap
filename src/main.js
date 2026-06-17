@@ -1,7 +1,7 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
 import './style.css'
 
-import maplibregl from 'maplibre-gl'
+import maplibregl from 'maplibre-gl/dist/maplibre-gl.js'
 import { CAMPUS } from './map/config.js'
 import { addAllLayers } from './map/layers.js'
 import { setupInteractions } from './map/interactions.js'
@@ -59,42 +59,97 @@ map.addControl(
   })
 )
 
+// ═══ Helper: Split features by layer (matches editor/import logic) ═══
+
+function getLayerForFeature(feature) {
+  const props = feature.properties || {}
+  const geomType = feature.geometry?.type
+  const type = props.type || ''
+  const complexID = props.complex_id || ''
+
+  if (geomType === 'Polygon') {
+    if (complexID) return 'complex'
+    const buildingTypes = ['academic', 'dormitory', 'library', 'sports', 'admin', 'canteen', 'utility', 'passage']
+    const zoneTypes = ['garden', 'lawn', 'parking', 'sports-ground', 'construction']
+    if (buildingTypes.includes(type)) return 'buildings'
+    if (zoneTypes.includes(type)) return 'zones'
+    return 'zones'
+  } else if (geomType === 'LineString') {
+    return 'roads'
+  } else if (geomType === 'Point') {
+    return 'poi'
+  }
+  return 'zones'
+}
+
+function splitFeaturesByLayer(features) {
+  const layers = {
+    buildings: { type: 'FeatureCollection', features: [] },
+    complex: { type: 'FeatureCollection', features: [] },
+    zones: { type: 'FeatureCollection', features: [] },
+    roads: { type: 'FeatureCollection', features: [] },
+    poi: { type: 'FeatureCollection', features: [] },
+    territory: { type: 'FeatureCollection', features: [] }
+  }
+
+  for (const f of features) {
+    const layerId = getLayerForFeature(f)
+    if (layers[layerId]) {
+      layers[layerId].features.push(f)
+    }
+  }
+
+  return layers
+}
+
 // ═══ Загрузка данных и слоёв ═══
 
 async function loadAllLayers() {
-  const data = {}
+  // Try API first
+  try {
+    const geoData = await api.fetchAllLayerData()
+    const hasData = Object.values(geoData).some(layer => layer?.features?.length > 0)
+    if (hasData) {
+      console.log('Loaded data from API')
+      return geoData
+    }
+  } catch (e) {
+    console.warn('API load failed, falling back to static files:', e)
+  }
 
-  // Use new API client to fetch all layers
-  const geoData = await api.fetchAllLayerData()
-  return geoData
+  // Fallback: load individual static layer files from dist/data/
+  console.log('Loading static layer files as fallback...')
+  const layerFiles = ['buildings', 'complex', 'zones', 'roads', 'poi', 'territory']
+  const geoData = {}
+
+  for (const layer of layerFiles) {
+    try {
+      const res = await fetch(`/data/${layer}.geojson`)
+      if (res.ok) {
+        const raw = await res.json()
+        if (raw.type === 'FeatureCollection' && raw.features?.length > 0) {
+          geoData[layer] = raw
+        }
+      }
+    } catch (e) {
+      console.warn(`Failed to load ${layer}.geojson:`, e)
+    }
+  }
+
+  const hasStaticData = Object.values(geoData).some(layer => layer?.features?.length > 0)
+  if (hasStaticData) {
+    console.log('Loaded data from static files')
+    return geoData
+  }
+
+  // Last resort: empty layers
+  return splitFeaturesByLayer([])
 }
 
 map.on('load', async () => {
   const geoData = await loadAllLayers()
 
   // Merge buildings + complex for processed 3D data
-  const buildingFeatures = [
-    ...((geoData.buildings?.features) || []),
-    ...((geoData.complex?.features) || [])
-  ]
-
-  if (buildingFeatures.length < 7) {
-    // If API returned too few (likely failed), try static files
-    for (const file of ['buildings.geojson', 'complex.geojson', 'territory.geojson', 'zones.geojson', 'roads.geojson', 'poi.geojson']) {
-      try {
-        const name = file.replace('.geojson', '')
-        if (geoData[name]?.features?.length) continue
-        const res = await fetch(`/data/${file}`)
-        if (res.ok) {
-          const raw = await res.json()
-          if (raw.type === 'FeatureCollection') {
-            geoData[name] = raw
-          }
-        }
-      } catch { /* skip */ }
-    }
-  }
-
   const allBuildingFeatures = [
     ...((geoData.buildings?.features) || []),
     ...((geoData.complex?.features) || [])

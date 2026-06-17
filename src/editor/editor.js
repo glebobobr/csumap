@@ -1,9 +1,9 @@
 import 'maplibre-gl/dist/maplibre-gl.css'
+import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
 import './editor.css'
 
-import maplibregl from 'maplibre-gl'
-import MapboxDraw from '@mapbox/mapbox-gl-draw'
-import '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css'
+import maplibregl from 'maplibre-gl/dist/maplibre-gl.js'
+import MapboxDraw from '@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.js'
 
 import { CAMPUS } from '../map/config.js'
 import { Toolbar } from './tools/toolbar.js'

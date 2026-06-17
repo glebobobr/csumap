@@ -11,6 +11,10 @@ export default defineConfig({
     },
   },
 
+  optimizeDeps: {
+    include: ['maplibre-gl', '@mapbox/mapbox-gl-draw'],
+  },
+
   build: {
     outDir: 'dist',
     rollupOptions: {
