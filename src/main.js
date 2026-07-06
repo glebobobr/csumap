@@ -7,6 +7,7 @@ import { addAllLayers } from './map/layers.js'
 import { setupInteractions } from './map/interactions.js'
 import { processBuildingsToFeatures } from './map/complex/index.js'
 import api from './api/client.ts'
+import { SyncService } from './editor/SyncService.js'
 
 // ═══ Создаём карту ═══
 
@@ -66,6 +67,9 @@ function getLayerForFeature(feature) {
   const geomType = feature.geometry?.type
   const type = props.type || ''
   const complexID = props.complex_id || ''
+
+  // Явный выбор слоя пользователем
+  if (props._layer) return props._layer
 
   if (geomType === 'Polygon') {
     if (complexID) return 'complex'
@@ -171,6 +175,51 @@ map.on('load', async () => {
 
 document.getElementById('btn-editor').addEventListener('click', () => {
   window.location.href = '/src/editor/editor.html'
+})
+
+// ═══ Синхронизация с редактором — автообновление при публикации ═══
+
+async function refreshMapData() {
+  if (!map || !map.isStyleLoaded()) { location.reload(); return }
+  try {
+    const geoData = await api.fetchAllLayerData()
+    const hasData = Object.values(geoData).some(layer => layer?.features?.length > 0)
+    if (!hasData) return
+
+    const allBuildingFeatures = [
+      ...((geoData.buildings?.features) || []),
+      ...((geoData.complex?.features) || [])
+    ]
+    const buildingsData = processBuildingsToFeatures({
+      type: 'FeatureCollection',
+      features: allBuildingFeatures
+    })
+
+    for (const [name, data] of Object.entries(geoData)) {
+      const source = map.getSource(name)
+      if (source && data) source.setData(data)
+    }
+
+    const complexFeatures = (geoData.complex?.features || []).filter(f => f.properties?.complex_id)
+    const complexData = complexFeatures.length
+      ? { type: 'FeatureCollection', features: complexFeatures }
+      : { type: 'FeatureCollection', features: [] }
+    const complexSource = map.getSource('complex')
+    if (complexSource) complexSource.setData(complexData)
+
+    const buildingsSource = map.getSource('buildings')
+    if (buildingsSource) buildingsSource.setData(buildingsData)
+  } catch (e) {
+    console.warn('refresh failed, falling back to reload:', e)
+    location.reload()
+  }
+}
+
+SyncService.onEvent('published', () => { console.log('[Sync] published event received'); refreshMapData() })
+
+window.addEventListener('focus', () => {
+  console.log('[Sync] tab focused, checking for updates...')
+  refreshMapData()
 })
 
 // Для отладки в консоли

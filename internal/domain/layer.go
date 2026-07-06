@@ -38,10 +38,10 @@ type UpdateLayerInput struct {
 }
 
 type LayerListItem struct {
-	ID           string
-	Name         string
-	Slug         string
-	Description  string
-	FeatureCount int
-	UpdatedAt    time.Time
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Slug         string    `json:"slug"`
+	Description  string    `json:"description"`
+	FeatureCount int       `json:"featureCount"`
+	UpdatedAt    time.Time `json:"updatedAt"`
 }

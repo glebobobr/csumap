@@ -52,15 +52,35 @@ export interface ReplaceFeaturesResponse {
 // API base URL (handled by Vite proxy)
 const API_BASE = '/api/v1'
 
-// Auth token storage
-let authToken: string | null = null
+// Auth token storage (persisted in localStorage)
+const AUTH_KEY = 'csumap:auth_token'
+
+function loadToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_KEY)
+  } catch {
+    return null
+  }
+}
+
+let authToken: string | null = loadToken()
 
 export function setAuthToken(token: string) {
   authToken = token
+  try {
+    localStorage.setItem(AUTH_KEY, token)
+  } catch { /* ignore */ }
 }
 
 export function getAuthToken(): string | null {
   return authToken
+}
+
+export function clearAuthToken() {
+  authToken = null
+  try {
+    localStorage.removeItem(AUTH_KEY)
+  } catch { /* ignore */ }
 }
 
 function authHeaders(): Record<string, string> {
@@ -189,7 +209,7 @@ export async function checkHealth(): Promise<boolean> {
  * Editor API functions
  */
 export async function fetchLayerFeaturesForEdit(layerId: string): Promise<LayerFeatures> {
-  const res = await fetch(`${API_BASE}/layers/${layerId}/features`, {
+  const res = await authFetch(`${API_BASE}/layers/${layerId}/features`, {
     headers: authHeaders(),
   })
   if (!res.ok) throw new Error(`Failed to fetch features for layer ${layerId}`)
@@ -197,7 +217,7 @@ export async function fetchLayerFeaturesForEdit(layerId: string): Promise<LayerF
 }
 
 export async function replaceLayerFeatures(layerId: string, features: CreateFeatureRequest[]): Promise<ReplaceFeaturesResponse> {
-  const res = await fetch(`${API_BASE}/layers/${layerId}/features/replace`, {
+  const res = await authFetch(`${API_BASE}/layers/${layerId}/features/replace`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify({ features }),
@@ -206,8 +226,20 @@ export async function replaceLayerFeatures(layerId: string, features: CreateFeat
   return res.json()
 }
 
+/**
+ * Wrapped fetch that dispatches 'auth:expired' on 401
+ */
+async function authFetch(url: string, options: RequestInit = {}): Promise<Response> {
+  const res = await fetch(url, options)
+  if (res.status === 401) {
+    clearAuthToken()
+    window.dispatchEvent(new CustomEvent('auth:expired'))
+  }
+  return res
+}
+
 export async function createFeature(layerId: string, feature: CreateFeatureRequest) {
-  const res = await fetch(`${API_BASE}/admin/layers/${layerId}/features`, {
+  const res = await authFetch(`${API_BASE}/admin/layers/${layerId}/features`, {
     method: 'POST',
     headers: authHeaders(),
     body: JSON.stringify(feature),
@@ -217,7 +249,7 @@ export async function createFeature(layerId: string, feature: CreateFeatureReque
 }
 
 export async function updateFeature(featureId: number, updates: Partial<CreateFeatureRequest>) {
-  const res = await fetch(`${API_BASE}/admin/features/${featureId}`, {
+  const res = await authFetch(`${API_BASE}/admin/features/${featureId}`, {
     method: 'PUT',
     headers: authHeaders(),
     body: JSON.stringify(updates),
@@ -227,7 +259,7 @@ export async function updateFeature(featureId: number, updates: Partial<CreateFe
 }
 
 export async function deleteFeature(featureId: number) {
-  const res = await fetch(`${API_BASE}/admin/features/${featureId}`, {
+  const res = await authFetch(`${API_BASE}/admin/features/${featureId}`, {
     method: 'DELETE',
     headers: authHeaders(),
   })
@@ -238,7 +270,7 @@ export async function deleteFeature(featureId: number) {
  * Admin API functions
  */
 export async function fetchAdminLayerFeatures(layerId: string): Promise<LayerFeatures> {
-  const res = await fetch(`${API_BASE}/admin/layers/${layerId}/features`, {
+  const res = await authFetch(`${API_BASE}/admin/layers/${layerId}/features`, {
     headers: authHeaders(),
   })
   if (!res.ok) throw new Error(`Failed to fetch admin features for layer ${layerId}`)
@@ -246,7 +278,7 @@ export async function fetchAdminLayerFeatures(layerId: string): Promise<LayerFea
 }
 
 export async function publishFeature(featureId: number): Promise<any> {
-  const res = await fetch(`${API_BASE}/admin/features/${featureId}/publish`, {
+  const res = await authFetch(`${API_BASE}/admin/features/${featureId}/publish`, {
     method: 'POST',
     headers: authHeaders(),
   })
@@ -255,7 +287,7 @@ export async function publishFeature(featureId: number): Promise<any> {
 }
 
 export async function publishAllDrafts(): Promise<{ message: string }> {
-  const res = await fetch(`${API_BASE}/admin/features/publish-all`, {
+  const res = await authFetch(`${API_BASE}/admin/features/publish-all`, {
     method: 'POST',
     headers: authHeaders(),
   })
@@ -264,7 +296,7 @@ export async function publishAllDrafts(): Promise<{ message: string }> {
 }
 
 export async function listChangesets(): Promise<any[]> {
-  const res = await fetch(`${API_BASE}/changesets`, {
+  const res = await authFetch(`${API_BASE}/changesets`, {
     headers: authHeaders(),
   })
   if (!res.ok) throw new Error(`Failed to list changesets`)

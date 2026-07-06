@@ -157,16 +157,27 @@ func (h *FeatureHandler) CreateFeature(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// DEBUG: Log the geometry
+	log.Printf("DEBUG CreateFeature: req.Geometry type=%T, value=%+v", req.Geometry, req.Geometry)
+	if req.Geometry != nil {
+		geomBytes, _ := json.Marshal(req.Geometry)
+		log.Printf("DEBUG CreateFeature: req.Geometry marshaled=%s", string(geomBytes))
+	}
+
 	geomData, err := json.Marshal(req.Geometry)
 	if err != nil {
 		respondError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
+	log.Printf("DEBUG CreateFeature: geomData=%s", string(geomData))
+	
 	geom, err := domain.ParseGeometry(geomData)
 	if err != nil {
+		log.Printf("DEBUG CreateFeature: ParseGeometry error=%v", err)
 		respondError(w, http.StatusUnprocessableEntity, err)
 		return
 	}
+	log.Printf("DEBUG CreateFeature: parsed geom=%+v", geom)
 
 	input := &domain.CreateFeatureInput{
 		LayerID:   layerID,
@@ -198,13 +209,22 @@ type UpdateFeatureRequest struct {
 }
 
 func (h *FeatureHandler) UpdateFeature(w http.ResponseWriter, r *http.Request) {
-	id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	idStr := chi.URLParam(r, "id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		log.Printf("ERROR UpdateFeature: invalid id=%q: %v", idStr, err)
+		respondError(w, http.StatusBadRequest, fmt.Errorf("invalid feature id: %q", idStr))
+		return
+	}
 
 	var req UpdateFeatureRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		log.Printf("ERROR UpdateFeature: decode body: %v", err)
 		respondError(w, http.StatusBadRequest, err)
 		return
 	}
+
+	log.Printf("DEBUG UpdateFeature: id=%d name=%v geometry=%v", id, req.Name, req.Geometry != nil)
 
 	input := &domain.UpdateFeatureInput{
 		Name:       req.Name,
@@ -217,11 +237,13 @@ func (h *FeatureHandler) UpdateFeature(w http.ResponseWriter, r *http.Request) {
 	if req.Geometry != nil {
 		geomData, err := json.Marshal(req.Geometry)
 		if err != nil {
+			log.Printf("ERROR UpdateFeature: marshal geometry: %v", err)
 			respondError(w, http.StatusUnprocessableEntity, err)
 			return
 		}
 		geom, err := domain.ParseGeometry(geomData)
 		if err != nil {
+			log.Printf("ERROR UpdateFeature: parse geometry: %v", err)
 			respondError(w, http.StatusUnprocessableEntity, err)
 			return
 		}
@@ -230,10 +252,12 @@ func (h *FeatureHandler) UpdateFeature(w http.ResponseWriter, r *http.Request) {
 
 	feature, err := h.featureService.Update(r.Context(), id, input)
 	if err != nil {
+		log.Printf("ERROR UpdateFeature: service.Update(%d): %v", id, err)
 		respondError(w, http.StatusInternalServerError, err)
 		return
 	}
 
+	log.Printf("DEBUG UpdateFeature: success id=%d name=%q", feature.ID, feature.Name)
 	respondJSON(w, http.StatusOK, feature.ToGeoJSON())
 }
 

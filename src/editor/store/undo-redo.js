@@ -3,7 +3,7 @@ export class UndoRedoManager {
     this.draw = draw
     this.undoStack = []
     this.redoStack = []
-    this.maxLength = 5
+    this.maxLength = 30
     this._restoring = false
   }
 
