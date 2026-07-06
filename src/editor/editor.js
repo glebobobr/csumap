@@ -271,7 +271,7 @@ function featureToRequest(feature) {
     const props = feature.properties || {}
     const isNew = !props.serverId
     return {
-        feature_id: isNew ? feature.id : props.serverId,
+        feature_id: String(isNew ? feature.id : props.serverId),
         name: props.name || '',
         properties: { ...props, status: 'draft' },
         geometry: feature.geometry,
@@ -285,6 +285,9 @@ function getLayerForFeature(feature) {
     const props = feature.properties || {}
     const type = props.type || ''
     const geomType = feature.geometry?.type
+
+    // Явный выбор слоя пользователем
+    if (props._layer) return props._layer
 
     if (geomType === 'Polygon') {
         if (props.complex_id) return 'complex'
@@ -321,18 +324,23 @@ async function saveAll() {
         const request = featureToRequest(feature)
         const props = feature.properties || {}
         const isNew = !props.serverId
+        const layerChanged = !isNew && props._savedLayer && props._savedLayer !== layerId
 
         try {
             let result
-            if (isNew) {
+            if (isNew || layerChanged) {
+                if (layerChanged) {
+                    await deleteFeature(props.serverId)
+                    console.log(`[saveAll] moved feature ${feature.id} from ${props._savedLayer} to ${layerId}`)
+                }
                 result = await createFeature(layerId, request)
             } else {
                 result = await updateFeature(props.serverId, request)
             }
             
-            // Save server ID back to feature for future updates
             if (result?.id) {
                 Draw.setFeatureProperty(feature.id, 'serverId', result.id)
+                Draw.setFeatureProperty(feature.id, '_savedLayer', layerId)
             }
             totalSaved++
             setStatus(`✓ ${layerId}: ${isNew ? 'создан' : 'обновлён'} ${props.name || 'объект'}`)
@@ -394,6 +402,7 @@ map.on('load', async () => {
                         ...f.properties, 
                         _status: status,
                         serverId: f.id,
+                        _savedLayer: layerId,
                         user_color: userColor  // Draw styles use this property
                     }
                 })
@@ -422,6 +431,18 @@ map.on('load', async () => {
     history.save()
 })
 
+function safeSetProp(featureId, key, value) {
+    try {
+        Draw.setFeatureProperty(featureId, key, value)
+    } catch (e) {
+        console.warn(`[Editor] setFeatureProp ${key}=${value} on ${featureId} failed:`, e.message)
+    }
+}
+
+function maybeCloseProps() {
+    try { propsPanel.close() } catch (_) {}
+}
+
 // ═══════════════════════════════════════
 //  UI Компоненты
 // ═══════════════════════════════════════
@@ -430,7 +451,8 @@ const palette = new ColorPalette((selectedHex) => {
     const selected = Draw.getSelected()
     if (selected.features.length > 0) {
         selected.features.forEach(f => {
-            Draw.setFeatureProperty(f.id, 'user_color', selectedHex)
+            safeSetProp(f.id, 'color', selectedHex)
+            safeSetProp(f.id, 'user_color', selectedHex)
         })
         Draw.set(Draw.getAll())
     }
@@ -445,10 +467,15 @@ function saveLocal() {
 
 const propsPanel = new PropertiesPanel(
     (feature, properties) => {
+        if (!Draw.get(feature.id)) {
+            maybeCloseProps()
+            setStatus('⚠️ Объект уже удалён')
+            return
+        }
         Object.entries(properties).forEach(([k, v]) => {
-            Draw.setFeatureProperty(feature.id, k, v)
+            safeSetProp(feature.id, k, v)
         })
-        Draw.setFeatureProperty(feature.id, 'user_color', properties.color)
+        safeSetProp(feature.id, 'user_color', properties.color)
         setStatus(`✓ ${properties.name || 'объект'} обновлён`)
         saveAll()
     },
@@ -603,7 +630,7 @@ const toolbar = new Toolbar((tool) => {
             }
             const complexId = crypto.randomUUID?.() || Math.random().toString(36).slice(2, 10)
             sel.features.forEach(f => {
-                Draw.setFeatureProperty(f.id, 'complex_id', complexId)
+                safeSetProp(f.id, 'complex_id', complexId)
             })
             Draw.set(Draw.getAll())
             setStatus(`Создан комплекс (${sel.features.length} зданий)`)
@@ -620,7 +647,7 @@ const toolbar = new Toolbar((tool) => {
                 break
             }
             sel.features.forEach(f => {
-                Draw.setFeatureProperty(f.id, 'complex_id', undefined)
+                safeSetProp(f.id, 'complex_id', undefined)
             })
             Draw.set(Draw.getAll())
             setStatus('Объекты удалены из комплекса')
@@ -709,11 +736,11 @@ map.on('draw.create', (e) => {
     toolbar.setTool('select')
 
     // Устанавливаем цвет из палитры
-    Draw.setFeatureProperty(feature.id, 'color', palette.selectedColor)
+    safeSetProp(feature.id, 'color', palette.selectedColor)
+    safeSetProp(feature.id, 'user_color', palette.selectedColor)
 
     propsPanel.open(feature)
-    setStatus('Объект создан. Заполните свойства.')
-    saveAll()
+    setStatus('Объект создан. Заполните свойства и нажмите «Применить».')
 })
 
 // Выбор изменился

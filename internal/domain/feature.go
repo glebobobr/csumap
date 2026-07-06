@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/paulmach/orb"
@@ -25,7 +24,11 @@ type Feature struct {
 
 func (f *Feature) ToGeoJSON() *geojson.Feature {
 	gj := geojson.NewFeature(f.Geometry)
-	gj.ID = f.FeatureID
+	if f.ID != 0 {
+		gj.ID = f.ID
+	} else if f.FeatureID != nil {
+		gj.ID = *f.FeatureID
+	}
 	if f.Name != "" {
 		gj.Properties["name"] = f.Name
 	}
@@ -46,10 +49,12 @@ func (f *Feature) BBox() (minLon, minLat, maxLon, maxLat float64) {
 	return b.Min.X(), b.Min.Y(), b.Max.X(), b.Max.Y()
 }
 
-func ParseGeometry(data json.RawMessage) (orb.Geometry, error) {
-	var geom orb.Geometry
-	err := json.Unmarshal(data, &geom)
-	return geom, err
+func ParseGeometry(data []byte) (orb.Geometry, error) {
+	g, err := geojson.UnmarshalGeometry(data)
+	if err != nil {
+		return nil, err
+	}
+	return g.Geometry(), nil
 }
 
 type CreateFeatureInput struct {

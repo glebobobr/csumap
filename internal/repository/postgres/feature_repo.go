@@ -140,7 +140,8 @@ func (r *FeatureRepo) GetPublishedByID(ctx context.Context, id int64) (*domain.F
 }
 
 func (r *FeatureRepo) Create(ctx context.Context, input *domain.CreateFeatureInput) (*domain.Feature, error) {
-	geomJSON, err := json.Marshal(input.Geometry)
+	g := geojson.NewGeometry(input.Geometry)
+	geomJSON, err := g.MarshalJSON()
 	if err != nil {
 		return nil, fmt.Errorf("marshal geometry: %w", err)
 	}
@@ -202,7 +203,8 @@ func (r *FeatureRepo) Update(ctx context.Context, id int64, input *domain.Update
 		argIdx++
 	}
 	if input.Geometry != nil {
-		geomJSON, err := json.Marshal(input.Geometry)
+		g := geojson.NewGeometry(input.Geometry)
+		geomJSON, err := g.MarshalJSON()
 		if err != nil {
 			return nil, fmt.Errorf("marshal geometry: %w", err)
 		}
@@ -302,7 +304,8 @@ func (r *FeatureRepo) ReplaceAll(ctx context.Context, layerID string, features [
 
 	inserted := 0
 	for _, f := range features {
-		geomJSON, _ := json.Marshal(f.Geometry)
+		g := geojson.NewGeometry(f.Geometry)
+		geomJSON, _ := g.MarshalJSON()
 		propsJSON, _ := json.Marshal(f.Properties)
 
 		_, err := tx.Exec(ctx, `
@@ -310,7 +313,11 @@ func (r *FeatureRepo) ReplaceAll(ctx context.Context, layerID string, features [
 			VALUES ($1, $2, $3, $4, ST_SetSRID(ST_GeomFromGeoJSON($5), 4326), $6, $7, $8, 'draft')
 		`, f.LayerID, f.FeatureID, f.Name, propsJSON, string(geomJSON), f.IsVisible, f.MinZoom, f.MaxZoom)
 		if err != nil {
-			log.Printf("Insert feature error (layer=%s, name=%s, feature_id=%s): %v", f.LayerID, f.Name, f.FeatureID, err)
+			featureID := ""
+			if f.FeatureID != nil {
+				featureID = *f.FeatureID
+			}
+			log.Printf("Insert feature error (layer=%s, name=%s, feature_id=%s): %v", f.LayerID, f.Name, featureID, err)
 			return 0, fmt.Errorf("insert feature: %w", err)
 		}
 		inserted++

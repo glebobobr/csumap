@@ -344,7 +344,7 @@ export function processBuildingsToFeatures(geojson) {
         const p = f.properties || {}
 
         const part = new BuildingPart({
-          id: p.id || f.id,
+          id: String(p.id || f.id),
           name: p.name || 'Здание',
           type: TRANSITION_TYPES.includes(p.type) ? 'transition' : 'building',
           coordinates: f.geometry.coordinates[0],

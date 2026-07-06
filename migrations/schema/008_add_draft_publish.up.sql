@@ -17,10 +17,20 @@ ALTER TABLE features
     ADD COLUMN IF NOT EXISTS parent_id     BIGINT REFERENCES features(id),
     ADD COLUMN IF NOT EXISTS version       INT DEFAULT 1;
 
--- Add status column to other editable tables
-ALTER TABLE panoramas        ADD COLUMN IF NOT EXISTS status edit_status DEFAULT 'draft';
-ALTER TABLE photos           ADD COLUMN IF NOT EXISTS status edit_status DEFAULT 'draft';
-ALTER TABLE building_models  ADD COLUMN IF NOT EXISTS status edit_status DEFAULT 'draft';
+-- Add status column to other editable tables (if they exist)
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'panoramas') THEN
+        ALTER TABLE panoramas ADD COLUMN IF NOT EXISTS status edit_status DEFAULT 'draft';
+    END IF;
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'photos') THEN
+        ALTER TABLE photos ADD COLUMN IF NOT EXISTS status edit_status DEFAULT 'draft';
+    END IF;
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'building_models') THEN
+        ALTER TABLE building_models ADD COLUMN IF NOT EXISTS status edit_status DEFAULT 'draft';
+    END IF;
+END;
+$$;
 
 -- VIEW for public API (only published features)
 CREATE OR REPLACE VIEW features_published AS

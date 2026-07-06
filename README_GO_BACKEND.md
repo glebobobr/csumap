@@ -949,3 +949,44 @@ func runMigrations(dsn string) error {
 ```
 
 Тогда при каждом `docker-compose up` миграции применятся автоматически.
+
+---
+
+## Интеграция с фронтендом (Editor)
+
+### Типобезопасность API
+
+Поля Go-структур должны строго соответствовать типам, которые отправляет фронтенд:
+
+| Go поле | JSON тип | JS источник | Потенциальная ошибка |
+|---------|----------|-------------|---------------------|
+| `FeatureID *string` | `"feature_id": "123"` | `feature.id` (число от Draw) | 400 Bad Request — число не парсится в `*string` |
+
+**Решение**: фронтенд всегда оборачивает `feature.id` и `serverId` в `String()`.
+
+### Режим Draft/Publish
+
+Фронтенд-редактор сохраняет фичи как **draft** (свойство `status: 'draft'` в JSONB).
+Главная страница получает только **published** фичи через публичный API (`GET /api/v1/layers/{layer}/features`).
+Публикация: `POST /api/v1/features/publish-all` → меняет `status='published'` для всех draft.
+
+### Слой-логика на фронтенде
+
+Определение слоя (`getLayerForFeature`) дублируется в трёх местах:
+1. `src/editor/editor.js` — редактор (сохранение)
+2. `src/editor/SaveService.js` — альтернативный сервис сохранения
+3. `src/main.js` — главная страница (отрисовка)
+
+Все три реализации должны быть синхронизированы. Критерии:
+- Polygon с `complex_id` → `complex`
+- Polygon с building type → `buildings`
+- Polygon с zone type → `zones`
+- LineString → `roads`
+- Point → `poi`
+- Свойство `_layer` (явный выбор пользователя) переопределяет авто-определение
+
+### Кэш тайлов и редактор
+
+При редактировании фичи кэш тайлов автоматически инвалидируется по её bbox.
+Если после публикации главная страница не обновилась — проверить BroadcastChannel (`csumap:sync`).
+
